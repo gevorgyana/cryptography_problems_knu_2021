@@ -2,7 +2,10 @@ use concise_scanf_like_input::{read_input_lines, read_line_of_vars};
 use std::io::{self, Stdin, Read};
 use std::cmp;
 
+use f128::f128;
+use std::time::{Duration, Instant};
 use clap::{self, Arg, App, SubCommand};
+use rand::Rng;
 
 /// Greatest Commond Denominator.
 /// How to calculate it for two integers?
@@ -43,9 +46,10 @@ use clap::{self, Arg, App, SubCommand};
 /// possible value of gcd(a, b) and reached the answer. Thus, we have
 /// found it.
 
-fn gcd(a: i32, b: i32) -> i32 {
+fn gcd(a: i128, b: i128) -> i128 {
     let (mut a, mut b) = (std::cmp::max(a, b), std::cmp::min(a, b));
     while a % b != 0 {
+	// println!("{} {} : {}, {}", a, b, a / b, a % b);
 	let b_t = b;
 	b = a % b;
 	a = b_t;
@@ -188,11 +192,11 @@ fn gcd(a: i32, b: i32) -> i32 {
 /// k4 * m1 + m4 = k4 * m2 * k3 + m2 = (k4 + 1 + k3) * m2
 /// So we have m4 in here, m2, m1, and m4. Represent it all in terms of these three values and do the same
 /// unti you get a, b, m4.
-fn extended_gcd(a: i32, b: i32) -> (i32, i32) {
+fn extended_gcd(a: i128, b: i128) -> (i128, i128) {
     // Perform the complete gcd process and store the intermediate subproblems in a table
     let (mut a, mut b) = (std::cmp::max(a, b), std::cmp::min(a, b));
-    println!("{} {}", a, b);
-    let mut vec: Vec<(i32, i32, i32, i32)> = vec![];
+    // println!("{} {}", a, b);
+    let mut vec: Vec<(i128, i128, i128, i128)> = vec![];
     loop {
 	if b == 0 {break;}
 	let div_coef = a / b;
@@ -201,7 +205,7 @@ fn extended_gcd(a: i32, b: i32) -> (i32, i32) {
 	a = b;
 	b = div_rem;
     }
-    println!("logs from extended_gcd {:?}", vec);
+    // println!("logs from extended_gcd {:?}", vec);
     // Now start the reverse process. The last row in the table contains the equation
     // that has zero remainder. Let's get rid of the last equation as it does not
     // contain any remainer, it proved that we have found gcd and has no other
@@ -219,6 +223,7 @@ fn extended_gcd(a: i32, b: i32) -> (i32, i32) {
 	// update our current state with the new row in a table, as we are going up.
 	let u = state.0;
 	let v = state.1;
+	// println!("u {}; v {}", u, v);
 	state.0 = v;
 	state.1 = - v * i.2 + u;
     }
@@ -226,7 +231,46 @@ fn extended_gcd(a: i32, b: i32) -> (i32, i32) {
     state
 }
 
+fn find_test_pair(from: i128, to: i128) -> (i128, i128) {
+    let mut flag = true;
+    let mut a: i128 = -1;
+    let mut b: i128 = -1;
+    while flag == true {
+	let mut rng = rand::thread_rng();
+	a = rng.gen_range(from..to);
+	b = rng.gen_range(from..to);
+	let g = gcd(a, b);
+	if a != b && a != g && b != g && g != 1 {
+	    flag = false;
+	}
+    }
+    (a, b)
+}
+
+fn measure_time(a: i128, b: i128, c: i128) -> i128 {
+    let c: i128 = 10;
+    let now = Instant::now();
+    for i in 0..c {
+	let r = gcd(a, b);
+    }
+    now.elapsed().as_nanos() as i128
+}
+
+fn launch_testing() {
+    let mut c: i128 = 10;
+    for i in 10..900 {
+	let (a, b) = find_test_pair(c, c * 2);
+	println!("{}", measure_time(a, b, c));
+	c = (f128::from(c) * f128::from(1.1)).into();
+    }
+}
+
 fn main() {
+
+    launch_testing();
+
+    return;
+
     let mut buf = String::new();
 
     let matches = App::new("Laboratory work #1")
@@ -241,12 +285,12 @@ fn main() {
 	).get_matches();
 
 
-    let (mut a, mut b): (i32, i32) = (-1, -1);
+    let (mut a, mut b): (i128, i128) = (-1, -1);
     io::stdin().read_line(&mut buf);
-    let data: Vec<i32> = buf
+    let data: Vec<i128> = buf
 	.split_whitespace()
 	.map(
-	    |x| { x.parse::<i32>().unwrap() }
+	    |x| { x.parse::<i128>().unwrap() }
 	).collect();
     a = data[0];
     b = data[1];
@@ -270,6 +314,6 @@ fn main() {
      * 3) as + bt = c ? if c is given. not gcd(a, b), but given.
      */
 
-    let (a, b): (i32, i32);
-    // read_line_of_vars!(i32, lines, a, b);
+    let (a, b): (i128, i128);
+    // read_line_of_vars!(i128, lines, a, b);
 }
