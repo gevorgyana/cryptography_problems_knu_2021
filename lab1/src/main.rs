@@ -2,10 +2,16 @@ use concise_scanf_like_input::{read_input_lines, read_line_of_vars};
 use std::io::{self, Stdin, Read};
 use std::cmp;
 
+use plotlib::grid::Grid;
+use plotlib::style::{PointStyle, PointMarker};
+use plotlib::repr::Plot;
+use plotlib::view::ContinuousView;
+use plotlib::page::Page;
 use f128::f128;
 use std::time::{Duration, Instant};
 use clap::{self, Arg, App, SubCommand};
 use rand::Rng;
+use rand::distributions::Uniform;
 
 /// Greatest Commond Denominator.
 /// How to calculate it for two integers?
@@ -237,8 +243,13 @@ fn find_test_pair(from: i128, to: i128) -> (i128, i128) {
     let mut b: i128 = -1;
     while flag == true {
 	let mut rng = rand::thread_rng();
-	a = rng.gen_range(from..to);
-	b = rng.gen_range(from..to);
+	let side = Uniform::new(from, to);
+	a = rng.sample(side);
+	b = rng.sample(side);
+	if b == 0 || a == 0 {
+	    continue;
+	}
+	println!("{} {}", a, b);
 	let g = gcd(a, b);
 	if a != b && a != g && b != g && g != 1 {
 	    flag = false;
@@ -248,21 +259,42 @@ fn find_test_pair(from: i128, to: i128) -> (i128, i128) {
 }
 
 fn measure_time(a: i128, b: i128, c: i128) -> i128 {
-    let c: i128 = 10;
     let now = Instant::now();
     for i in 0..c {
 	let r = gcd(a, b);
     }
-    now.elapsed().as_nanos() as i128
+    now.elapsed().as_micros() as i128
 }
 
 fn launch_testing() {
-    let mut c: i128 = 10;
-    for i in 10..900 {
-	let (a, b) = find_test_pair(c, c * 2);
-	println!("{}", measure_time(a, b, c));
-	c = (f128::from(c) * f128::from(1.1)).into();
+    let mut interval: i128 = 10;
+    let mut data: Vec<(f64, f64)> = vec![];
+    for i in 0..100 {
+	for _ in 0..i {
+	    let (a, b) = find_test_pair(interval, interval * 2);
+	    if std::cmp::min(a, b) < 100000000 {
+		data.push((std::cmp::min(a, b) as f64, measure_time(a, b, 1000) as f64));
+	    }
+	}
+	interval = (f128::from(interval) * f128::from(2)).into();
     }
+
+    println!("{:?}", data);
+
+    let p = Plot::new(data).point_style(
+	PointStyle::new()
+	    .colour("#35C788")
+	    .size(3.0)
+	    ,
+    );
+
+    let v = ContinuousView::new()
+	.add(p)
+	.x_label("min(a, b)")
+	.y_label("Time, microseconds")
+	.x_range(0., 100000000.)
+        .y_range(0., 1000.);
+    Page::single(&v).save("scatter.svg").unwrap();
 }
 
 fn main() {
