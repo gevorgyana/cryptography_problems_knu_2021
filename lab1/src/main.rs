@@ -270,7 +270,7 @@ fn launch_testing() {
     let mut interval: i128 = 10;
     let mut data: Vec<(f64, f64)> = vec![];
     for i in 0..100 {
-	for _ in 0..i {
+	for _ in 0..i * 10 {
 	    let (a, b) = find_test_pair(interval, interval * 2);
 	    if std::cmp::min(a, b) < 100000000 {
 		data.push((std::cmp::min(a, b) as f64, measure_time(a, b, 1000) as f64));
